@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <endian.h>
 
+#define VERSION "1.0"
+
 enum {
 	SOI = 0xFFD8,
 	EOI = 0xFFD9,
@@ -24,6 +26,10 @@ static void show_usage(){
 	);
 }
 
+static void show_version(){
+	puts("jpegsplit-" VERSION);
+}
+
 static void error(const char* func){
 	fprintf(stderr, "jpegsplit: %s failed: %s\n", func, strerror(errno));
 }
@@ -36,6 +42,11 @@ int main(int argc, const char* argv[]){
 
 	if ( strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ){
 		show_usage();
+		return 0;
+	}
+
+	if ( strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0 ){
+		show_version();
 		return 0;
 	}
 
