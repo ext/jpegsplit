@@ -29,14 +29,14 @@ static void error(const char* func){
 }
 
 int main(int argc, const char* argv[]){
-	if ( strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ){
-		show_usage();
-		return 0;
-	}
-
 	if ( argc < 2 ){
 		show_usage();
 		return 1;
+	}
+
+	if ( strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ){
+		show_usage();
+		return 0;
 	}
 
 	/* open src */
