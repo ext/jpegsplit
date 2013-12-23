@@ -180,11 +180,13 @@ int main(int argc, const char* argv[]){
 	/* detect presence of additional data. */
 	const int extra_bytes = end - ptr;
 	if ( extra_bytes == 0){
+		fprintf(stderr, "jpegsplit: no additional data found\n");
 		return 1;
 	}
 
 	/* no output filename given, just return successful */
 	if ( argc < 3 ){
+		fprintf(stderr, "jpegsplit: data found, pass an extra filename to save it\n");
 		return 0;
 	}
 
