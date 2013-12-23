@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
@@ -47,6 +48,44 @@ static void show_version(){
 
 static void error(const char* func){
 	fprintf(stderr, "jpegsplit: %s failed: %s\n", func, strerror(errno));
+}
+
+static const unsigned char* do_jpeg(const unsigned char* ptr, const unsigned char* end){
+	do {
+		/* safety check */
+		if ( ptr > end ){
+			fprintf(stderr, "jpegsplit: pointer moved past end-of-file, truncated file?\n");
+			exit(1);
+		}
+
+		/* read marker */
+		const uint16_t marker = be16toh(*((uint16_t*)ptr));
+		ptr += 2;
+		if ( marker == EOI ) break;
+
+		/* validate marker */
+		if ( (marker & 0xff00) != 0xff00 ){
+			fprintf(stderr, "jpegsplit: unrecognized marked %x\n", marker);
+			exit(1);
+		}
+
+		/* size of marker */
+		const uint16_t size = be16toh(*((uint16_t*)ptr));
+		ptr += size;
+
+		/* start-of-scan marker */
+		if ( marker == SOS ){
+			do {
+				/* read data until a new frame marker arrives */
+				while ( *ptr++ != 0xFF && ptr < end );
+				if ( *ptr == 0x00 && ptr < end ) continue;
+				ptr--;
+				break;
+			} while (1);
+		}
+	} while (1);
+
+	return ptr;
 }
 
 int main(int argc, const char* argv[]){
@@ -86,48 +125,14 @@ int main(int argc, const char* argv[]){
 		return 1;
 	}
 
-	/* validate jpeg */
 	const unsigned char* ptr = data;
 	const unsigned char* end = data + sb.st_size;
+	/* validate jpeg */
 	if ( memcmp(ptr, soi_marker, 2) != 0 ){
 		fprintf(stderr, "jpegsplit: unrecognized jpeg %s\n", argv[1]);
 		return 1;
 	}
-	ptr += 2;
-
-	do {
-		/* safety check */
-		if ( ptr > end ){
-			fprintf(stderr, "jpegsplit: pointer moved past end-of-file, truncated file?\n");
-			return 1;
-		}
-
-		/* read marker */
-		const uint16_t marker = be16toh(*((uint16_t*)ptr));
-		ptr += 2;
-		if ( marker == EOI ) break;
-
-		/* validate marker */
-		if ( (marker & 0xff00) != 0xff00 ){
-			fprintf(stderr, "jpegsplit: unrecognized marked %x\n", marker);
-			return 1;
-		}
-
-		/* size of marker */
-		const uint16_t size = be16toh(*((uint16_t*)ptr));
-		ptr += size;
-
-		/* start-of-scan marker */
-		if ( marker == SOS ){
-			do {
-				/* read data until a new frame marker arrives */
-				while ( *ptr++ != 0xFF && ptr < end );
-				if ( *ptr == 0x00 && ptr < end ) continue;
-				ptr--;
-				break;
-			} while (1);
-		}
-	} while (1);
+	ptr = do_jpeg(ptr+2, end);
 
 	/* detect presence of additional data. */
 	const int extra_bytes = end - ptr;
