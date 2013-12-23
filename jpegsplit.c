@@ -125,14 +125,17 @@ int main(int argc, const char* argv[]){
 		return 1;
 	}
 
+	/* setup pointers */
 	const unsigned char* ptr = data;
 	const unsigned char* end = data + sb.st_size;
-	/* validate jpeg */
-	if ( memcmp(ptr, soi_marker, 2) != 0 ){
-		fprintf(stderr, "jpegsplit: unrecognized jpeg %s\n", argv[1]);
+
+	/* try known formats */
+	if ( memcmp(ptr, soi_marker, 2) == 0 ){
+		ptr = do_jpeg(ptr+2, end);
+	} else{
+		fprintf(stderr, "jpegsplit: unrecognized image %s\n", argv[1]);
 		return 1;
 	}
-	ptr = do_jpeg(ptr+2, end);
 
 	/* detect presence of additional data. */
 	const int extra_bytes = end - ptr;
