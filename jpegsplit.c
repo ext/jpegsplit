@@ -32,7 +32,9 @@ enum {
 	SOS = 0xFFDA,
 	APP0 = 0xFFE0,
 };
-static unsigned char soi_marker[2] = {0xff, 0xd8};
+
+static unsigned char jpg_signature[2] = {0xff, 0xd8};
+static unsigned char png_signature[8] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
 
 static void show_usage(){
 	printf(
@@ -50,7 +52,7 @@ static void error(const char* func){
 	fprintf(stderr, "jpegsplit: %s failed: %s\n", func, strerror(errno));
 }
 
-static const unsigned char* do_jpeg(const unsigned char* ptr, const unsigned char* end){
+static const unsigned char* do_jpg(const unsigned char* ptr, const unsigned char* end){
 	do {
 		/* safety check */
 		if ( ptr > end ){
@@ -85,6 +87,22 @@ static const unsigned char* do_jpeg(const unsigned char* ptr, const unsigned cha
 		}
 	} while (1);
 
+	return ptr;
+}
+
+static const unsigned char* do_png(const unsigned char* ptr, const unsigned char* end){
+	do {
+		char type[4];
+
+		/* read chunk, ignore data */
+		const uint32_t len = be32toh(*(const uint32_t*)ptr); ptr += 4;
+		memcpy(type, ptr, 4); ptr += 4;
+		ptr += len + 4;
+
+		if ( memcmp(type, "IEND", 4) == 0 ){
+			break;
+		}
+	} while (1);
 	return ptr;
 }
 
@@ -130,8 +148,10 @@ int main(int argc, const char* argv[]){
 	const unsigned char* end = data + sb.st_size;
 
 	/* try known formats */
-	if ( memcmp(ptr, soi_marker, 2) == 0 ){
-		ptr = do_jpeg(ptr+2, end);
+	if ( memcmp(ptr, jpg_signature, sizeof(jpg_signature)) == 0 ){
+		ptr = do_jpg(ptr + sizeof(jpg_signature), end);
+	} else if ( memcmp(ptr, png_signature, sizeof(png_signature)) == 0 ){
+		ptr = do_png(ptr + sizeof(png_signature), end);
 	} else{
 		fprintf(stderr, "jpegsplit: unrecognized image %s\n", argv[1]);
 		return 1;
