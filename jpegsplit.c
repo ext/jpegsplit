@@ -33,8 +33,23 @@ enum {
 	APP0 = 0xFFE0,
 };
 
+struct format {
+	unsigned char* signature;
+	size_t signature_size;
+	const unsigned char* (*func)(const unsigned char* ptr, const unsigned char* end);
+};
+
 static unsigned char jpg_signature[2] = {0xff, 0xd8};
 static unsigned char png_signature[8] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+
+static const unsigned char* do_jpg(const unsigned char* ptr, const unsigned char* end);
+static const unsigned char* do_png(const unsigned char* ptr, const unsigned char* end);
+
+struct format known_formats[] = {
+	{jpg_signature, sizeof(jpg_signature), do_jpg},
+	{png_signature, sizeof(png_signature), do_png},
+	{0, 0, 0} /* sentinel */
+};
 
 static void show_usage(){
 	printf(
@@ -148,11 +163,16 @@ int main(int argc, const char* argv[]){
 	const unsigned char* end = data + sb.st_size;
 
 	/* try known formats */
-	if ( memcmp(ptr, jpg_signature, sizeof(jpg_signature)) == 0 ){
-		ptr = do_jpg(ptr + sizeof(jpg_signature), end);
-	} else if ( memcmp(ptr, png_signature, sizeof(png_signature)) == 0 ){
-		ptr = do_png(ptr + sizeof(png_signature), end);
-	} else{
+	struct format* format = &known_formats[0];
+	while ( format->signature ){
+		if ( memcmp(ptr, format->signature, format->signature_size) == 0 ){
+			ptr = format->func(ptr + format->signature_size, end);
+			break;
+		}
+		format++;
+	}
+
+	if ( ptr == data ){
 		fprintf(stderr, "jpegsplit: unrecognized image %s\n", argv[1]);
 		return 1;
 	}
