@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <endian.h>
+#include <getopt.h>
 
 #define VERSION "1.0"
 
@@ -50,18 +51,6 @@ struct format known_formats[] = {
 	{png_signature, sizeof(png_signature), do_png},
 	{0, 0, 0} /* sentinel */
 };
-
-static void show_usage(){
-	printf(
-		"usage: jpegsplit SRC [DST]\n"
-		"Detect and extract additional data efter end of JPEG-images.\n"
-		"If no destination is set it returns 0 if extra data was found or 1 if pure jpeg.\n"
-	);
-}
-
-static void show_version(){
-	puts("jpegsplit-" VERSION);
-}
 
 static void error(const char* func){
 	fprintf(stderr, "jpegsplit: %s failed: %s\n", func, strerror(errno));
@@ -121,24 +110,57 @@ static const unsigned char* do_png(const unsigned char* ptr, const unsigned char
 	return ptr;
 }
 
-int main(int argc, const char* argv[]){
-	if ( argc < 2 ){
+static const char* shortopts = "hv";
+static const struct option longopts[] = {
+	{"help",      no_argument,       0, 'h'},
+	{"version",   no_argument,       0, 'v'},
+	{0, 0, 0, 0}, /* sentinel */
+};
+
+static void show_usage(){
+	printf(
+		"Detect and extract additional data efter end of JPEG-images.\n"
+		"If no destination is set it returns 0 if extra data was found or 1 if pure jpeg.\n"
+		"\n"
+		"usage: jpegsplit SRC [DST]\n"
+		"  -v, --version      Show version and exit.\n"
+		"  -h, --help         This text.\n"
+	);
+}
+
+static void show_version(){
+	puts("jpegsplit-" VERSION);
+}
+
+int main(int argc, char* argv[]){
+	int op, option_index = -1;
+	while ( (op = getopt_long(argc, argv, shortopts, longopts, &option_index)) != -1 ){
+		switch (op){
+		case 0:   /* long opt */
+		case '?': /* unknown opt */
+			break;
+
+		case 'h': /* --help */
+			show_usage();
+			return 0;
+
+		case 'v': /* --version */
+			show_version();
+			return 0;
+		}
+	}
+
+	const size_t num_files = argc-optind;
+	if ( num_files == 0 ){
 		show_usage();
 		return 1;
 	}
 
-	if ( strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ){
-		show_usage();
-		return 0;
-	}
-
-	if ( strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0 ){
-		show_version();
-		return 0;
-	}
+	const char* src_filename = argv[optind];
+	const char* dst_filename = num_files > 1 ? argv[optind+1] : NULL;
 
 	/* open src */
-	int src = open(argv[1], O_RDONLY);
+	int src = open(src_filename, O_RDONLY);
 	if (src == -1){
 		error("open");
 		return 1;
@@ -173,7 +195,7 @@ int main(int argc, const char* argv[]){
 	}
 
 	if ( ptr == data ){
-		fprintf(stderr, "jpegsplit: unrecognized image %s\n", argv[1]);
+		fprintf(stderr, "jpegsplit: unrecognized image %s\n", src_filename);
 		return 1;
 	}
 
@@ -185,13 +207,13 @@ int main(int argc, const char* argv[]){
 	}
 
 	/* no output filename given, just return successful */
-	if ( argc < 3 ){
+	if ( !dst_filename ){
 		fprintf(stderr, "jpegsplit: data found, pass an extra filename to save it\n");
 		return 0;
 	}
 
 	/* write extra data to new file */
-	FILE* dst = fopen(argv[2], "w");
+	FILE* dst = fopen(dst_filename, "w");
 	fwrite(ptr, extra_bytes, 1, dst);
 	fclose(dst);
 
