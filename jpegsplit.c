@@ -208,7 +208,7 @@ int main(int argc, char* argv[]){
 
 	/* no output filename given, just return successful */
 	if ( !dst_filename ){
-		fprintf(stderr, "jpegsplit: data found, pass an extra filename to save it\n");
+		fprintf(stderr, "jpegsplit: data found at offset 0x%zx, pass an extra filename to save it\n", ptr-data);
 		return 0;
 	}
 
