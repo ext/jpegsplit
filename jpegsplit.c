@@ -121,8 +121,9 @@ static void show_usage(){
 	printf(
 		"Detect and extract additional data efter end of JPEG-images.\n"
 		"If no destination is set it returns 0 if extra data was found or 1 if pure jpeg.\n"
+		"If FIRST is set it will contain the first image without the extra data.\n"
 		"\n"
-		"usage: jpegsplit SRC [DST]\n"
+		"usage: jpegsplit SRC [[FIRST] DST]\n"
 		"  -v, --version      Show version and exit.\n"
 		"  -h, --help         This text.\n"
 	);
@@ -156,10 +157,9 @@ int main(int argc, char* argv[]){
 		return 1;
 	}
 
-	const char* src_filename = argv[optind];
-	const char* dst_filename = num_files > 1 ? argv[optind+1] : NULL;
 
 	/* open src */
+	const char* src_filename = argv[optind];
 	int src = open(src_filename, O_RDONLY);
 	if (src == -1){
 		error("open");
@@ -207,15 +207,22 @@ int main(int argc, char* argv[]){
 	}
 
 	/* no output filename given, just return successful */
-	if ( !dst_filename ){
+	if ( num_files <= 1 ){
 		fprintf(stderr, "jpegsplit: data found at offset 0x%zx, pass an extra filename to save it\n", ptr-data);
 		return 0;
 	}
 
 	/* write extra data to new file */
-	FILE* dst = fopen(dst_filename, "w");
+	FILE* dst = fopen(argv[argc-1], "w");
 	fwrite(ptr, extra_bytes, 1, dst);
 	fclose(dst);
+
+	/* write first data to new file */
+	if ( num_files >= 3 ){
+		dst = fopen(argv[argc-2], "w");
+		fwrite(data, ptr-data, 1, dst);
+		fclose(dst);
+	}
 
 	return 0;
 }
