@@ -25,7 +25,7 @@
 #include <endian.h>
 #include <getopt.h>
 
-#define VERSION "1.0"
+#define VERSION "1.2"
 
 enum {
 	SOI = 0xFFD8,
