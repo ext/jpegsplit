@@ -76,7 +76,7 @@ static const unsigned char* do_jpg(const unsigned char* ptr, const unsigned char
 		}
 
 		/* read marker */
-		const uint16_t marker = be16toh(*((uint16_t*)ptr));
+		const uint16_t marker = be16toh(*((const uint16_t*)ptr));
 		ptr += 2;
 		if ( marker == EOI ) break;
 
@@ -87,7 +87,7 @@ static const unsigned char* do_jpg(const unsigned char* ptr, const unsigned char
 		}
 
 		/* size of marker */
-		const uint16_t size = be16toh(*((uint16_t*)ptr));
+		const uint16_t size = be16toh(*((const uint16_t*)ptr));
 		ptr += size;
 
 		/* start-of-scan marker */
