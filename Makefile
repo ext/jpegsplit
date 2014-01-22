@@ -5,3 +5,6 @@ jpegsplit: jpegsplit.o Makefile
 
 %.o: %.c Makefile
 	$(CC) -Wall $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f jpegsplit jpegsplit.o
