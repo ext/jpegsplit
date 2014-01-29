@@ -35,6 +35,7 @@ enum {
 };
 
 struct format {
+	const char* name;
 	unsigned char* signature;
 	size_t signature_size;
 	const unsigned char* (*func)(const unsigned char* ptr, const unsigned char* end);
@@ -47,8 +48,8 @@ static const unsigned char* do_jpg(const unsigned char* ptr, const unsigned char
 static const unsigned char* do_png(const unsigned char* ptr, const unsigned char* end);
 
 struct format known_formats[] = {
-	{jpg_signature, sizeof(jpg_signature), do_jpg},
-	{png_signature, sizeof(png_signature), do_png},
+	{"jpeg image", jpg_signature, sizeof(jpg_signature), do_jpg},
+	{"png image", png_signature, sizeof(png_signature), do_png},
 	{0, 0, 0} /* sentinel */
 };
 
@@ -212,7 +213,8 @@ int main(int argc, char* argv[]){
 
 	/* no output filename given, just return successful */
 	if ( num_files <= 1 ){
-		fprintf(stderr, "jpegsplit: data found at offset 0x%zx, pass an extra filename to save it\n", ptr-data);
+		struct format* format = match_signature(ptr);
+		fprintf(stderr, "jpegsplit: %s found at offset 0x%zx, pass an extra filename to save it\n", format ? format->name : "data", ptr-data);
 		return 0;
 	}
 
