@@ -110,6 +110,17 @@ static const unsigned char* do_png(const unsigned char* ptr, const unsigned char
 	return ptr;
 }
 
+static struct format* match_signature(const unsigned char* ptr){
+	struct format* format = &known_formats[0];
+	while ( format->signature ){
+		if ( memcmp(ptr, format->signature, format->signature_size) == 0 ){
+			return format;
+		}
+		format++;
+	}
+	return NULL;
+}
+
 static const char* shortopts = "hv";
 static const struct option longopts[] = {
 	{"help",      no_argument,       0, 'h'},
@@ -185,21 +196,14 @@ int main(int argc, char* argv[]){
 	const unsigned char* end = data + sb.st_size;
 
 	/* try known formats */
-	struct format* format = &known_formats[0];
-	while ( format->signature ){
-		if ( memcmp(ptr, format->signature, format->signature_size) == 0 ){
-			ptr = format->func(ptr + format->signature_size, end);
-			break;
-		}
-		format++;
-	}
-
-	if ( ptr == data ){
+	struct format* format = match_signature(ptr);
+	if ( !format ){
 		fprintf(stderr, "jpegsplit: unrecognized image %s\n", src_filename);
 		return 1;
 	}
 
 	/* detect presence of additional data. */
+	ptr = format->func(ptr + format->signature_size, end);
 	const int extra_bytes = end - ptr;
 	if ( extra_bytes == 0){
 		fprintf(stderr, "jpegsplit: no additional data found\n");
