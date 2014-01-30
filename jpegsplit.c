@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#include <endian.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
