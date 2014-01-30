@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <endian.h>
 #include <getopt.h>
+#include <magic.h>
 
 #define VERSION "1.3"
 
@@ -36,7 +37,6 @@ enum {
 };
 
 struct format {
-	const char* name;
 	unsigned char* signature;
 	size_t signature_size;
 	const unsigned char* (*func)(const unsigned char* ptr, const unsigned char* end);
@@ -44,13 +44,14 @@ struct format {
 
 static unsigned char jpg_signature[2] = {0xff, 0xd8};
 static unsigned char png_signature[8] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+static magic_t magic = NULL;
 
 static const unsigned char* do_jpg(const unsigned char* ptr, const unsigned char* end);
 static const unsigned char* do_png(const unsigned char* ptr, const unsigned char* end);
 
 struct format known_formats[] = {
-	{"jpeg image", jpg_signature, sizeof(jpg_signature), do_jpg},
-	{"png image", png_signature, sizeof(png_signature), do_png},
+	{jpg_signature, sizeof(jpg_signature), do_jpg},
+	{png_signature, sizeof(png_signature), do_png},
 	{0, 0, 0} /* sentinel */
 };
 
@@ -123,14 +124,11 @@ static struct format* match_signature(const unsigned char* ptr){
 	return NULL;
 }
 
-static const char* name(const struct format* format){
-	return format ? format->name : "unknown data";
-}
-
 static void output(const char* filename, const struct format* format, const unsigned char* begin, const unsigned char* end, const unsigned char* ref){
 	const size_t bytes = end - begin;
+	const char* magic_desc = magic_buffer(magic, begin, bytes);
 
-	fprintf(stderr, "jpegsplit: %s found at offset 0x%zx (%zd bytes)", name(format), begin-ref, bytes);
+	fprintf(stderr, "jpegsplit: `%s' found at offset 0x%zx (%zd bytes)", magic_desc, begin-ref, bytes);
 	if ( !filename ){
 		fputc('\n', stderr);
 		return;
@@ -180,6 +178,16 @@ int main(int argc, char* argv[]){
 			show_version();
 			return 0;
 		}
+	}
+
+	/* initialize libmagic */
+	magic = magic_open(MAGIC_MIME_TYPE);
+	if ( !magic ) {
+		fprintf(stderr, "jpegsplit: unable to initialize magic library\n");
+	} else if ( magic_load(magic, NULL) != 0 ) {
+		fprintf(stderr, "jpegsplit: cannot load magic database - %s\n", magic_error(magic));
+		magic_close(magic);
+		magic = NULL;
 	}
 
 	const size_t num_files = argc-optind;
