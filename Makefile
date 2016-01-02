@@ -8,3 +8,7 @@ jpegsplit: jpegsplit.o Makefile
 
 clean:
 	rm -f jpegsplit jpegsplit.o
+	$(MAKE) -C test clean
+
+check: jpegsplit
+	$(MAKE) -C test check

@@ -1,0 +1,16 @@
+# generated source files
+1.jpg
+2.jpg
+3.jpg
+4.jpg
+5.jpg
+6.png
+text.txt
+
+# generated concaternations
+simple.jpg
+jpg_jpg.jpg
+jpg_png_txt.jpg
+
+# checksums
+*.md5
