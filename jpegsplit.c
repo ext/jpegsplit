@@ -27,7 +27,7 @@
 #include <getopt.h>
 #include <magic.h>
 
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 enum {
 	SOI = 0xFFD8,
