@@ -124,7 +124,7 @@ static struct format* match_signature(const unsigned char* ptr){
 	return NULL;
 }
 
-static void output(const char* filename, const struct format* format, const unsigned char* begin, const unsigned char* end, const unsigned char* ref){
+static void output(const char* filename, const unsigned char* begin, const unsigned char* end, const unsigned char* ref){
 	const size_t bytes = end - begin;
 	const char* magic_desc = magic_buffer(magic, begin, bytes);
 
@@ -249,7 +249,7 @@ int main(int argc, char* argv[]){
 
 		/* write current file (detected extra file is written in next pass) */
 		const char* filename = (optind<=argc) ? argv[optind++] : NULL;
-		output(filename, format, begin, ptr, data);
+		output(filename, begin, ptr, data);
 
 		/* guess next format */
 		format = match_signature(ptr);
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]){
 
 	/* write last file */
 	const char* filename = (optind<=argc) ? argv[optind++] : NULL;
-	output(filename, format, begin, end, data);
+	output(filename, begin, end, data);
 
 	return 0;
 }
