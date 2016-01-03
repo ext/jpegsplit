@@ -1,0 +1,15 @@
+language: c
+compiler:
+  - clang
+  - gcc
+
+addons:
+  apt:
+    packages:
+      - libjpeg-dev
+      - libpng12-dev
+      - libmagic-dev
+
+script:
+  - make
+  - make check
